@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISRIM — Analyse Morphologique Hébraïque</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap');
+
+  :root {
+    --parchment: #f5edd8;
+    --parchment-dark: #e8d9b8;
+    --ink: #1a1208;
+    --ink-soft: #3d2e14;
+    --gold: #b8860b;
+    --gold-light: #d4a017;
+    --gold-pale: #f0d070;
+    --crimson: #8b1a1a;
+    --teal: #1a5f5f;
+    --teal-light: #2a8080;
+    --stone: #7a6a50;
+    --shadow: rgba(26,18,8,0.18);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--ink);
+    font-family: 'Crimson Pro', Georgia, serif;
+    color: var(--ink);
+    min-height: 100vh;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 29px, rgba(180,140,60,0.07) 30px),
+      repeating-linear-gradient(90deg, transparent, transparent 29px, rgba(180,140,60,0.04) 30px),
+      radial-gradient(ellipse at 20% 10%, rgba(184,134,11,0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 90%, rgba(139,26,26,0.1) 0%, transparent 50%);
+    background-color: #0d0a05;
+  }
+
+  .scroll-wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  /* ===== FICHE ISRIM ===== */
+  .fiche {
+    background: var(--parchment);
+    border-radius: 4px;
+    padding: 50px 60px;
+    margin-bottom: 30px;
+    position: relative;
+    box-shadow:
+      0 0 0 1px rgba(184,134,11,0.3),
+      0 0 0 4px var(--parchment-dark),
+      0 0 0 5px rgba(184,134,11,0.2),
+      0 8px 40px rgba(0,0,0,0.6),
+      inset 0 0 80px rgba(184,134,11,0.05);
+    background-image:
+      radial-gradient(ellipse at 0% 0%, rgba(184,134,11,0.08) 0%, transparent 40%),
+      radial-gradient(ellipse at 100% 100%, rgba(139,26,26,0.06) 0%, transparent 40%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  }
+
+  .fiche::before {
+    content: '';
+    position: absolute;
+    inset: 12px;
+    border: 1px solid rgba(184,134,11,0.25);
+    pointer-events: none;
+    border-radius: 2px;
+  }
+
+  .ornament {
+    text-align: center;
+    color: var(--gold);
+    font-size: 1.5rem;
+    letter-spacing: 0.5rem;
+    margin-bottom: 6px;
+    opacity: 0.7;
+  }
+
+  .fiche-header {
+    text-align: center;
+    margin-bottom: 40px;
+    border-bottom: 2px solid var(--gold);
+    padding-bottom: 28px;
+  }
+
+  .fiche-header .hebrew-title {
+    font-size: 3rem;
+    font-family: serif;
+    direction: rtl;
+    color: var(--crimson);
+    line-height: 1;
+    text-shadow: 1px 1px 0 rgba(139,26,26,0.2);
+    margin-bottom: 4px;
+  }
+
+  .fiche-header .subtitle {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    color: var(--stone);
+    font-style: italic;
+    letter-spacing: 0.08em;
+    margin-bottom: 2px;
+  }
+
+  .fiche-header .main-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--ink);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .fiche-header .tagline {
+    font-size: 0.85rem;
+    color: var(--stone);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  /* ISRIM grid */
+  .isrim-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+
+  .isrim-card {
+    border: 1px solid rgba(184,134,11,0.3);
+    border-radius: 3px;
+    padding: 18px 20px;
+    background: rgba(255,255,255,0.3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .isrim-card::before {
+    content: attr(data-letter);
+    position: absolute;
+    top: -8px;
+    right: -4px;
+    font-family: 'Playfair Display', serif;
+    font-size: 5rem;
+    font-weight: 900;
+    color: var(--gold-pale);
+    opacity: 0.35;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .isrim-card.full-width {
+    grid-column: 1 / -1;
+  }
+
+  .isrim-card .card-label {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(184,134,11,0.2);
+    padding-bottom: 8px;
+  }
+
+  .isrim-card .letter-badge {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .isrim-card .label-text {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--crimson);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .isrim-card .label-fr {
+    font-size: 0.8rem;
+    color: var(--stone);
+    font-style: italic;
+  }
+
+  .isrim-card .heb-label {
+    direction: rtl;
+    font-size: 1.1rem;
+    color: var(--ink-soft);
+    font-family: serif;
+  }
+
+  .card-content {
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: var(--ink-soft);
+  }
+
+  .card-content strong { color: var(--crimson); }
+  .card-content em { color: var(--teal); font-style: normal; font-weight: 600; }
+
+  .example-box {
+    background: rgba(184,134,11,0.08);
+    border-left: 3px solid var(--gold);
+    border-radius: 0 3px 3px 0;
+    padding: 10px 14px;
+    margin-top: 10px;
+    direction: rtl;
+  }
+
+  .example-box .heb-word {
+    font-size: 2rem;
+    font-family: serif;
+    color: var(--crimson);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .example-box .transliteration {
+    font-size: 0.85rem;
+    color: var(--teal);
+    font-style: italic;
+    direction: ltr;
+  }
+
+  .example-box .translation {
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    direction: ltr;
+    margin-top: 2px;
+  }
+
+  /* Tableau des indices */
+  .indices-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    margin-top: 8px;
+  }
+
+  .indices-table th {
+    background: rgba(184,134,11,0.15);
+    color: var(--crimson);
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    text-align: left;
+    padding: 6px 10px;
+    border: 1px solid rgba(184,134,11,0.2);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .indices-table td {
+    padding: 5px 10px;
+    border: 1px solid rgba(184,134,11,0.15);
+    vertical-align: top;
+    line-height: 1.4;
+  }
+
+  .indices-table tr:nth-child(even) td { background: rgba(255,255,255,0.25); }
+
+  .tag {
+    display: inline-block;
+    background: var(--teal);
+    color: white;
+    font-size: 0.7rem;
+    padding: 1px 6px;
+    border-radius: 10px;
+    margin: 1px;
+    font-family: 'Crimson Pro', serif;
+    letter-spacing: 0.03em;
+  }
+
+  .tag.gold { background: var(--gold); }
+  .tag.crimson { background: var(--crimson); }
+
+  /* Separator */
+  .section-sep {
+    text-align: center;
+    color: var(--gold);
+    margin: 24px 0 20px;
+    font-size: 1rem;
+    opacity: 0.5;
+    letter-spacing: 0.8rem;
+  }
+
+  .footnote-bar {
+    margin-top: 32px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(184,134,11,0.3);
+    font-size: 0.78rem;
+    color: var(--stone);
+    text-align: center;
+    font-style: italic;
+  }
+
+  /* ===== JEU ===== */
+  .game-section {
+    background: var(--parchment);
+    border-radius: 4px;
+    padding: 40px 50px;
+    box-shadow:
+      0 0 0 1px rgba(184,134,11,0.3),
+      0 0 0 4px var(--parchment-dark),
+      0 0 0 5px rgba(184,134,11,0.2),
+      0 8px 40px rgba(0,0,0,0.6);
+    background-image: radial-gradient(ellipse at 50% 0%, rgba(184,134,11,0.07) 0%, transparent 60%);
+    position: relative;
+  }
+
+  .game-section::before {
+    content: '';
+    position: absolute;
+    inset: 12px;
+    border: 1px solid rgba(184,134,11,0.2);
+    pointer-events: none;
+    border-radius: 2px;
+  }
+
+  .game-title {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  .game-title h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.7rem;
+    font-weight: 900;
+    color: var(--crimson);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .game-title .heb {
+    direction: rtl;
+    font-size: 1.4rem;
+    font-family: serif;
+    color: var(--gold);
+    display: block;
+    margin-top: 4px;
+  }
+
+  .game-title p {
+    font-size: 0.9rem;
+    color: var(--stone);
+    font-style: italic;
+    margin-top: 6px;
+  }
+
+  /* Score & progress */
+  .game-hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(26,18,8,0.06);
+    border: 1px solid rgba(184,134,11,0.25);
+    border-radius: 3px;
+    padding: 10px 18px;
+    margin-bottom: 24px;
+    font-size: 0.88rem;
+  }
+
+  .hud-item {
+    text-align: center;
+  }
+
+  .hud-item .hud-val {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--crimson);
+    display: block;
+    line-height: 1;
+  }
+
+  .hud-item .hud-lbl {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--stone);
+  }
+
+  /* Word display */
+  .word-display {
+    text-align: center;
+    padding: 28px;
+    border: 2px solid rgba(184,134,11,0.4);
+    border-radius: 4px;
+    margin-bottom: 24px;
+    background: rgba(255,255,255,0.4);
+    position: relative;
+  }
+
+  .word-display .hebrew-word-big {
+    font-size: 4rem;
+    font-family: serif;
+    color: var(--crimson);
+    direction: rtl;
+    line-height: 1.1;
+    text-shadow: 1px 2px 0 rgba(139,26,26,0.15);
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .word-display .word-hint {
+    font-size: 0.85rem;
+    color: var(--stone);
+    font-style: italic;
+  }
+
+  .word-display .word-transliteration {
+    font-size: 1.1rem;
+    color: var(--teal);
+    font-style: italic;
+    margin-top: 4px;
+  }
+
+  .word-display .word-type-badge {
+    position: absolute;
+    top: 10px;
+    left: 14px;
+    font-size: 0.7rem;
+    background: var(--gold);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    font-family: 'Playfair Display', serif;
+  }
+
+  /* Question */
+  .question-area {
+    margin-bottom: 20px;
+  }
+
+  .question-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: var(--ink);
+    font-weight: 700;
+    margin-bottom: 14px;
+    text-align: center;
+    font-style: italic;
+  }
+
+  .question-category {
+    text-align: center;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--teal);
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  /* Options */
+  .options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .option-btn {
+    background: rgba(255,255,255,0.5);
+    border: 1.5px solid rgba(184,134,11,0.3);
+    border-radius: 3px;
+    padding: 12px 16px;
+    cursor: pointer;
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+    transition: all 0.18s ease;
+    text-align: left;
+    line-height: 1.4;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .option-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gold);
+    opacity: 0;
+    transition: opacity 0.18s;
+  }
+
+  .option-btn:hover:not(:disabled) {
+    border-color: var(--gold);
+    background: rgba(184,134,11,0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 12px rgba(184,134,11,0.2);
+  }
+
+  .option-btn.correct {
+    background: rgba(26,95,95,0.12);
+    border-color: var(--teal);
+    color: var(--teal);
+    font-weight: 600;
+  }
+
+  .option-btn.wrong {
+    background: rgba(139,26,26,0.08);
+    border-color: var(--crimson);
+    color: var(--crimson);
+  }
+
+  .option-btn:disabled { cursor: default; }
+
+  .option-heb {
+    font-family: serif;
+    font-size: 1.2rem;
+    direction: rtl;
+    display: block;
+    color: var(--crimson);
+    margin-bottom: 2px;
+  }
+
+  /* Feedback */
+  .feedback-box {
+    border-radius: 3px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    display: none;
+    border-left: 4px solid;
+  }
+
+  .feedback-box.show { display: block; }
+  .feedback-box.correct-fb { background: rgba(26,95,95,0.1); border-color: var(--teal); color: var(--teal-light); }
+  .feedback-box.wrong-fb { background: rgba(139,26,26,0.08); border-color: var(--crimson); color: var(--crimson); }
+
+  .feedback-box .fb-title {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 4px;
+  }
+
+  /* Buttons */
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  .btn-primary {
+    background: var(--crimson);
+    color: var(--parchment);
+    border: none;
+    border-radius: 3px;
+    padding: 12px 30px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    box-shadow: 0 3px 12px rgba(139,26,26,0.3);
+  }
+
+  .btn-primary:hover {
+    background: #6b0e0e;
+    transform: translateY(-1px);
+    box-shadow: 0 5px 18px rgba(139,26,26,0.4);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--stone);
+    border: 1.5px solid rgba(122,106,80,0.4);
+    border-radius: 3px;
+    padding: 12px 24px;
+    font-family: 'Playfair Display', serif;
+    font-size: 0.9rem;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--stone);
+    color: var(--ink);
+    background: rgba(122,106,80,0.08);
+  }
+
+  /* ISRIM Analysis panel */
+  .analysis-panel {
+    border: 1px solid rgba(184,134,11,0.25);
+    border-radius: 3px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    background: rgba(255,255,255,0.25);
+    display: none;
+  }
+
+  .analysis-panel.show { display: block; }
+
+  .analysis-panel h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(184,134,11,0.2);
+    padding-bottom: 6px;
+  }
+
+  .analysis-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 5px;
+    font-size: 0.85rem;
+    align-items: baseline;
+    flex-wrap: wrap;
+  }
+
+  .analysis-row .a-key {
+    font-weight: 700;
+    color: var(--crimson);
+    min-width: 80px;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .analysis-row .a-val { color: var(--ink-soft); }
+  .analysis-row .a-heb { font-family: serif; font-size: 1.1rem; color: var(--teal); direction: rtl; }
+
+  /* End screen */
+  .end-screen {
+    display: none;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .end-screen.show { display: block; }
+
+  .end-screen .score-big {
+    font-family: 'Playfair Display', serif;
+    font-size: 5rem;
+    font-weight: 900;
+    color: var(--gold);
+    line-height: 1;
+    text-shadow: 2px 2px 0 rgba(184,134,11,0.2);
+  }
+
+  .end-screen .score-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--stone);
+    margin-bottom: 20px;
+  }
+
+  .end-screen .end-msg {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    font-style: italic;
+    color: var(--crimson);
+    margin-bottom: 8px;
+  }
+
+  .end-screen .end-heb {
+    font-family: serif;
+    font-size: 1.8rem;
+    direction: rtl;
+    color: var(--gold);
+    margin-bottom: 20px;
+  }
+
+  .progress-bar {
+    background: rgba(184,134,11,0.15);
+    height: 4px;
+    border-radius: 2px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    background: var(--gold);
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  .mode-toggle {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+
+  .mode-btn {
+    background: transparent;
+    border: 1.5px solid rgba(184,134,11,0.3);
+    color: var(--stone);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-family: 'Crimson Pro', serif;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.18s;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .mode-btn.active {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: white;
+  }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 600px) {
+    .fiche { padding: 30px 24px; }
+    .isrim-grid { grid-template-columns: 1fr; }
+    .options-grid { grid-template-columns: 1fr; }
+    .game-section { padding: 28px 24px; }
+    .scroll-wrapper { padding: 12px; }
+    .fiche-header .main-title { font-size: 1.5rem; }
+    .word-display .hebrew-word-big { font-size: 3rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="scroll-wrapper">
+
+  <!-- ===================== FICHE ISRIM ===================== -->
+  <div class="fiche">
+    <div class="ornament">✦ ✦ ✦</div>
+
+    <div class="fiche-header">
+      <div class="hebrew-title">ניתוח מורפולוגי</div>
+      <div class="subtitle">Méthode d'Analyse</div>
+      <div class="main-title">ISRIM</div>
+      <div class="tagline">Hébreu Biblique &amp; Moderne · Fiche de Référence</div>
+    </div>
+
+    <div class="section-sep">· · ·</div>
+
+    <div class="isrim-grid">
+
+      <!-- I -->
+      <div class="isrim-card" data-letter="I">
+        <div class="card-label">
+          <span class="letter-badge">I</span>
+          <div>
+            <div class="label-text">Identification</div>
+            <div class="label-fr">זיהוי המילה</div>
+          </div>
+        </div>
+        <div class="card-content">
+          Repérer le mot dans le texte et le citer tel quel, avec ses points-voyelles (niqqud) si présents.
+          <br><br>
+          <strong>Éléments à noter :</strong><br>
+          • Forme exacte du mot<br>
+          • Position dans la phrase<br>
+          • Présence de préfixes/suffixes visibles<br>
+          • Avec ou sans niqqud
+        </div>
+        <div class="example-box">
+          <span class="heb-word">וְכָתַבְתָּ</span>
+          <span class="transliteration">ve-katav-ta</span>
+          <span class="translation">→ « et tu écriras »</span>
+        </div>
+      </div>
+
+      <!-- S -->
+      <div class="isrim-card" data-letter="S">
+        <div class="card-label">
+          <span class="letter-badge">S</span>
+          <div>
+            <div class="label-text">Structure</div>
+            <div class="label-fr">מבנה המילה</div>
+          </div>
+        </div>
+        <div class="card-content">
+          Décomposer le mot en ses constituants morphologiques : <em>préfixes</em>, <em>radical</em>, <em>suffixes</em>.
+          <br><br>
+          <strong>Préfixes courants :</strong>
+          <span class="tag">וְ et</span>
+          <span class="tag">בְּ dans</span>
+          <span class="tag">לְ pour</span>
+          <span class="tag">כְּ comme</span>
+          <span class="tag">הַ le/la</span>
+          <br><br>
+          <strong>Suffixes verbaux :</strong>
+          <span class="tag crimson">תָּ 2ms</span>
+          <span class="tag crimson">תְּ 2fs</span>
+          <span class="tag crimson">נוּ 1cp</span>
+          <span class="tag crimson">וּ 3mp</span>
+        </div>
+        <div class="example-box">
+          <span class="heb-word">וְ + כָתַב + תָּ</span>
+          <span class="transliteration">préfixe + racine + suffixe</span>
+          <span class="translation">conjonction + racine K-T-B + 2ms</span>
+        </div>
+      </div>
+
+      <!-- R -->
+      <div class="isrim-card" data-letter="R">
+        <div class="card-label">
+          <span class="letter-badge">R</span>
+          <div>
+            <div class="label-text">Racine</div>
+            <div class="label-fr">שֹׁרֶשׁ</div>
+          </div>
+        </div>
+        <div class="card-content">
+          Extraire les <strong>3 lettres radicales</strong> (שֹׁרֶשׁ trilatère) après suppression des préfixes, suffixes et lettres de schème (<em>אִמות הקריאה</em>).
+          <br><br>
+          <strong>Lettres de schème à ignorer :</strong>
+          <span class="tag gold">א</span>
+          <span class="tag gold">י</span>
+          <span class="tag gold">ה</span>
+          <span class="tag gold">ו</span>
+          <span class="tag gold">מ</span>
+          <span class="tag gold">נ</span>
+          <span class="tag gold">ת</span>
+          <br><br>
+          <strong>Racines faibles</strong> (עיינין חלשות) : ע"ו, ל"ה, ע"י — attention aux mutations.
+        </div>
+        <div class="example-box">
+          <span class="heb-word">כ – ת – ב</span>
+          <span class="transliteration">K – T – B</span>
+          <span class="translation">écrire · inscrire · graver</span>
+        </div>
+      </div>
+
+      <!-- I2 -->
+      <div class="isrim-card" data-letter="I">
+        <div class="card-label">
+          <span class="letter-badge">I</span>
+          <div>
+            <div class="label-text">Indices</div>
+            <div class="label-fr">סִימָנִים</div>
+          </div>
+        </div>
+        <div class="card-content">
+          Analyser les <em>voyelles</em> (niqqud) et les <em>consonnes du schème</em> pour déterminer la catégorie grammaticale.
+        </div>
+        <table class="indices-table">
+          <thead>
+            <tr><th>Indice</th><th>Valeur</th><th>Exemple</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Qamats-Patah</strong></td>
+              <td>Qal Passé 3ms</td>
+              <td style="direction:rtl;font-family:serif">כָּתַב</td>
+            </tr>
+            <tr>
+              <td><strong>מ-préfixe</strong></td>
+              <td>Participe / Nom d'action</td>
+              <td style="direction:rtl;font-family:serif">מִכְתָּב</td>
+            </tr>
+            <tr>
+              <td><strong>Dagesh fort</strong></td>
+              <td>Pi'el / Pu'al / Hitpa'el</td>
+              <td style="direction:rtl;font-family:serif">כִּתֵּב</td>
+            </tr>
+            <tr>
+              <td><strong>Shureq/Holem</strong></td>
+              <td>Futur Qal</td>
+              <td style="direction:rtl;font-family:serif">יִכְתֹּב</td>
+            </tr>
+            <tr>
+              <td><strong>תִּ-préfixe</strong></td>
+              <td>Futur 2ms / Infinitif</td>
+              <td style="direction:rtl;font-family:serif">תִּכְתֹּב</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- M -->
+      <div class="isrim-card full-width" data-letter="M">
+        <div class="card-label">
+          <span class="letter-badge">M</span>
+          <div>
+            <div class="label-text">Morphologie</div>
+            <div class="label-fr">צוּרַת הַדִּקְדּוּק</div>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:6px;">
+          <div class="card-content">
+            <strong>Pour les verbes, préciser :</strong><br>
+            <span class="tag">Binyan (בִּנְיָן)</span>
+            <span class="tag gold">Temps / Mode</span>
+            <span class="tag crimson">Personne</span>
+            <span class="tag">Genre</span>
+            <span class="tag gold">Nombre</span>
+            <br><br>
+            <table class="indices-table">
+              <tr><th colspan="2">Les 7 Binyanim</th></tr>
+              <tr><td style="direction:rtl;font-family:serif">קַל</td><td>Qal — actif simple</td></tr>
+              <tr><td style="direction:rtl;font-family:serif">נִפְעַל</td><td>Nif'al — passif/réfléchi</td></tr>
+              <tr><td style="direction:rtl;font-family:serif">פִּעֵל</td><td>Pi'el — intensif actif</td></tr>
+              <tr><td style="direction:rtl;font-family:serif">פֻּעַל</td><td>Pu'al — intensif passif</td></tr>
+              <tr><td style="direction:rtl;font-family:serif">הִפְעִיל</td><td>Hif'il — causatif actif</td></tr>
+              <tr><td style="direction:rtl;font-family:serif">הֻפְעַל</td><td>Huf'al — causatif passif</td></tr>
+              <tr><td style="direction:rtl;font-family:serif">הִתְפַּעֵל</td><td>Hitpa'el — réfléchi intensif</td></tr>
+            </table>
+          </div>
+          <div class="card-content">
+            <strong>Pour les noms, préciser :</strong><br>
+            <span class="tag">Genre (m/f)</span>
+            <span class="tag gold">Nombre (sg/pl/du)</span>
+            <span class="tag crimson">État (absolu/construit)</span>
+            <br><br>
+            <table class="indices-table">
+              <tr><th>Terminaison</th><th>Valeur</th></tr>
+              <tr><td style="direction:rtl;font-family:serif">—ִים</td><td>Masculin pluriel</td></tr>
+              <tr><td style="direction:rtl;font-family:serif">—וֹת</td><td>Féminin pluriel</td></tr>
+              <tr><td style="direction:rtl;font-family:serif">—ָה</td><td>Féminin singulier</td></tr>
+              <tr><td style="direction:rtl;font-family:serif">—ַיִם</td><td>Duel</td></tr>
+              <tr><td style="direction:rtl;font-family:serif">—ִי</td><td>Construit fs</td></tr>
+            </table>
+            <br>
+            <strong>Exemple complet :</strong>
+            <div class="example-box" style="margin-top:6px">
+              <span class="heb-word" style="font-size:1.5rem">וְכָתַבְתָּ</span>
+              <span class="transliteration">Qal Passé · 2ms · Singulier</span>
+              <span class="translation">racine כ-ת-ב · préfixe וְ (copulatif) · suf. תָּ (tu)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end isrim-grid -->
+
+    <div class="footnote-bar">
+      Méthode ISRIM — Identification · Structure · Racine · Indices · Morphologie<br>
+      Pour l'hébreu biblique (BH) et hébreu moderne (MH) · © Fiche pédagogique
+    </div>
+  </div><!-- end fiche -->
+
+
+  <!-- ===================== JEU ===================== -->
+  <div class="game-section">
+    <div class="game-title">
+      <h2>Jeu d'Analyse ISRIM</h2>
+      <span class="heb">מִשְׂחַק דִּקְדּוּק עִבְרִי</span>
+      <p>Identifiez la morphologie des mots hébraïques</p>
+    </div>
+
+    <div class="mode-toggle" id="modeToggle">
+      <button class="mode-btn active" onclick="setMode('binyan')">Binyan</button>
+      <button class="mode-btn" onclick="setMode('temps')">Temps / Mode</button>
+      <button class="mode-btn" onclick="setMode('personne')">Personne</button>
+      <button class="mode-btn" onclick="setMode('racine')">Racine</button>
+    </div>
+
+    <div id="gameContent">
+      <div class="game-hud">
+        <div class="hud-item">
+          <span class="hud-val" id="scoreVal">0</span>
+          <span class="hud-lbl">Points</span>
+        </div>
+        <div class="hud-item">
+          <span class="hud-val" id="qNum">1</span>
+          <span class="hud-lbl">Question</span>
+        </div>
+        <div class="hud-item">
+          <span class="hud-val" id="streakVal">0</span>
+          <span class="hud-lbl">Série</span>
+        </div>
+        <div class="hud-item">
+          <span class="hud-val" id="totalQ">15</span>
+          <span class="hud-lbl">Total</span>
+        </div>
+      </div>
+
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+      </div>
+
+      <div class="word-display" id="wordDisplay">
+        <span class="word-type-badge" id="wordTypeBadge">Verbe</span>
+        <span class="hebrew-word-big" id="hebWord">—</span>
+        <span class="word-transliteration" id="wordTranslit">—</span>
+        <span class="word-hint" id="wordHint">Racine : — · Contexte : —</span>
+      </div>
+
+      <div class="question-area">
+        <div class="question-category" id="qCategory">BINYAN</div>
+        <div class="question-text" id="qText">Quel est le Binyan de cette forme verbale ?</div>
+        <div class="options-grid" id="optionsGrid"></div>
+      </div>
+
+      <div class="feedback-box" id="feedbackBox">
+        <div class="fb-title" id="fbTitle">—</div>
+        <div id="fbBody">—</div>
+      </div>
+
+      <div class="analysis-panel" id="analysisPanel">
+        <h3>✦ Analyse ISRIM complète</h3>
+        <div id="analysisContent"></div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-secondary hidden" id="btnAnalysis" onclick="showAnalysis()">Voir l'analyse</button>
+        <button class="btn-primary hidden" id="btnNext" onclick="nextQuestion()">Question suivante →</button>
+      </div>
+    </div><!-- end gameContent -->
+
+    <div class="end-screen" id="endScreen">
+      <div class="score-big" id="finalScore">0</div>
+      <div class="score-label">points sur <span id="maxScore">—</span></div>
+      <div class="end-msg" id="endMsg">—</div>
+      <div class="end-heb" id="endHeb">—</div>
+      <div class="btn-row" style="margin-top:20px">
+        <button class="btn-primary" onclick="restartGame()">Recommencer</button>
+        <button class="btn-secondary" onclick="setMode(currentMode)">Changer de mode</button>
+      </div>
+    </div>
+  </div><!-- end game-section -->
+
+</div><!-- end scroll-wrapper -->
+
+<script>
+// ============================
+// DATA
+// ============================
+const WORDS = [
+  {
+    heb: "כָּתַב", translit: "katav", root: "כ-ת-ב", meaning: "il a écrit",
+    type: "verbe", binyan: "Qal", temps: "Passé (Qatal)", personne: "3ms",
+    structure: "כָּ (Qamats) + תַ (Patah) + ב",
+    hint: "Racine : כ-ת-ב · Qamats sous la 1re radicale"
+  },
+  {
+    heb: "יִכְתֹּב", translit: "yikhtov", root: "כ-ת-ב", meaning: "il écrira",
+    type: "verbe", binyan: "Qal", temps: "Futur (Yiqtol)", personne: "3ms",
+    structure: "יִ (préfixe 3ms) + כְּ + תֹּ + ב",
+    hint: "Racine : כ-ת-ב · Préfixe יִ = futur 3ms"
+  },
+  {
+    heb: "כִּתֵּב", translit: "kitév", root: "כ-ת-ב", meaning: "il a écrit (intensif)",
+    type: "verbe", binyan: "Pi'el", temps: "Passé (Qatal)", personne: "3ms",
+    structure: "כִּ (Hireq) + תֵּ (Dagesh + Tsere) + ב",
+    hint: "Racine : כ-ת-ב · Dagesh fort dans la 2e radicale = Pi'el"
+  },
+  {
+    heb: "הִכְתִּיב", translit: "hikhttiv", root: "כ-ת-ב", meaning: "il a dicté / fait écrire",
+    type: "verbe", binyan: "Hif'il", temps: "Passé (Qatal)", personne: "3ms",
+    structure: "הִ (préfixe Hif'il) + כְ + תִּ + יב",
+    hint: "Racine : כ-ת-ב · Préfixe הִ = Hif'il"
+  },
+  {
+    heb: "נִכְתַּב", translit: "nikhtav", root: "כ-ת-ב", meaning: "il a été écrit",
+    type: "verbe", binyan: "Nif'al", temps: "Passé (Qatal)", personne: "3ms",
+    structure: "נִ (préfixe Nif'al) + כְ + תַ + ב",
+    hint: "Racine : כ-ת-ב · Préfixe נִ = Nif'al (passif)"
+  },
+  {
+    heb: "הִתְכַּתֵּב", translit: "hitkattev", root: "כ-ת-ב", meaning: "ils ont correspondu (s'écrire)",
+    type: "verbe", binyan: "Hitpa'el", temps: "Passé (Qatal)", personne: "3ms",
+    structure: "הִתְ (préfixe Hitpa'el) + כַּ (Dagesh) + תֵּ + ב",
+    hint: "Racine : כ-ת-ב · Préfixe הִתְ = Hitpa'el (réfléchi)"
+  },
+  {
+    heb: "שָׁמַר", translit: "shamar", root: "ש-מ-ר", meaning: "il a gardé / observé",
+    type: "verbe", binyan: "Qal", temps: "Passé (Qatal)", personne: "3ms",
+    structure: "שָׁ (Qamats) + מַ (Patah) + ר",
+    hint: "Racine : ש-מ-ר · Schème Qatal régulier"
+  },
+  {
+    heb: "תִּשְׁמְרוּ", translit: "tishm'ru", root: "ש-מ-ר", meaning: "vous garderez",
+    type: "verbe", binyan: "Qal", temps: "Futur (Yiqtol)", personne: "2mp",
+    structure: "תִּ (préfixe 2mp) + שְׁמְ + רוּ (suf. 2mp)",
+    hint: "Racine : ש-מ-ר · תִּ...וּ = 2mp futur"
+  },
+  {
+    heb: "דָּבָר", translit: "davar", root: "ד-ב-ר", meaning: "parole / chose",
+    type: "nom", binyan: "—", temps: "Nom ms absolu", personne: "—",
+    structure: "דָּ (Qamats) + בָ (Qamats) + ר = nom masculin",
+    hint: "Racine : ד-ב-ר · Nom masculin singulier absolu"
+  },
+  {
+    heb: "דְּבָרִים", translit: "d'varim", root: "ד-ב-ר", meaning: "paroles / choses",
+    type: "nom", binyan: "—", temps: "Nom mp absolu", personne: "—",
+    structure: "דְּבָ + רִים (terminaison mp)",
+    hint: "Racine : ד-ב-ר · Terminaison ִים = masculin pluriel"
+  },
+  {
+    heb: "מַלְכָּה", translit: "malka", root: "מ-ל-כ", meaning: "reine",
+    type: "nom", binyan: "—", temps: "Nom fs absolu", personne: "—",
+    structure: "מַלְ + כָּ + ה (terminaison fs)",
+    hint: "Racine : מ-ל-כ · Terminaison ָה = féminin singulier"
+  },
+  {
+    heb: "הִשְׁתַּמֵּר", translit: "hishtamer", root: "ש-מ-ר", meaning: "se garder / se protéger",
+    type: "verbe", binyan: "Hitpa'el", temps: "Infinitif", personne: "—",
+    structure: "הִתְ (préfixe) + שְׁ (métathèse תש→שׁת) + תַּמֵּר",
+    hint: "Racine : ש-מ-ר · Métathèse Hitpa'el avec shin"
+  },
+  {
+    heb: "שָׁמְרוּ", translit: "sham'ru", root: "ש-מ-ר", meaning: "ils ont gardé",
+    type: "verbe", binyan: "Qal", temps: "Passé (Qatal)", personne: "3mp",
+    structure: "שָׁ + מְ + ר + וּ (suf. 3mp)",
+    hint: "Racine : ש-מ-ר · Suffixe וּ = 3mp Qatal"
+  },
+  {
+    heb: "בֵּית", translit: "beit", root: "ב-י-ת", meaning: "maison de (état construit)",
+    type: "nom", binyan: "—", temps: "Nom ms construit", personne: "—",
+    structure: "בֵּ (Tsere) + ית · racine ב-י-ת",
+    hint: "Racine : ב-י-ת · Tsere = état construit masculin"
+  },
+  {
+    heb: "יְדַבֵּר", translit: "y'dabbér", root: "ד-ב-ר", meaning: "il parlera",
+    type: "verbe", binyan: "Pi'el", temps: "Futur (Yiqtol)", personne: "3ms",
+    structure: "יְ (préfixe Pi'el fut.) + דַּ (Dagesh) + בֵּ + ר",
+    hint: "Racine : ד-ב-ר · Dagesh + préfixe יְ = Pi'el Yiqtol 3ms"
+  }
+];
+
+// Questions by mode
+const MODES = {
+  binyan: {
+    label: "BINYAN",
+    question: "Quel est le Binyan (בִּנְיָן) de cette forme ?",
+    getAnswer: w => w.binyan === "—" ? w.temps : w.binyan,
+    getWrongPool: () => ["Qal","Nif'al","Pi'el","Pu'al","Hif'il","Huf'al","Hitpa'el","Nom (pas de binyan)"]
+  },
+  temps: {
+    label: "TEMPS / MODE",
+    question: "Quel est le temps ou mode de cette forme ?",
+    getAnswer: w => w.temps,
+    getWrongPool: () => ["Passé (Qatal)","Futur (Yiqtol)","Impératif","Infinitif absolu","Infinitif construit","Participe actif","Participe passif","Nom ms absolu","Nom mp absolu","Nom fs absolu","Nom ms construit"]
+  },
+  personne: {
+    label: "PERSONNE / GENRE / NOMBRE",
+    question: "Quelle est la personne, genre et nombre ?",
+    getAnswer: w => w.personne === "—" ? w.temps : w.personne,
+    getWrongPool: () => ["1cs","1cp","2ms","2fs","2mp","2fp","3ms","3fs","3mp","3fp","ms absolu","mp absolu","fs absolu","fp absolu"]
+  },
+  racine: {
+    label: "RACINE (שֹׁרֶשׁ)",
+    question: "Quelle est la racine trilitère de ce mot ?",
+    getAnswer: w => w.root,
+    getWrongPool: () => ["כ-ת-ב","ש-מ-ר","ד-ב-ר","מ-ל-כ","ב-י-ת","ה-ל-כ","נ-ת-נ","א-מ-ר","י-ד-ע","ב-ר-כ","ק-ד-ש","ע-ב-ד","ר-א-ה","ש-מ-ע"]
+  }
+};
+
+let currentMode = "binyan";
+let questionOrder = [];
+let currentQIndex = 0;
+let score = 0;
+let streak = 0;
+let answered = false;
+let TOTAL_QUESTIONS = 15;
+
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  restartGame();
+}
+
+function restartGame() {
+  score = 0; streak = 0; currentQIndex = 0; answered = false;
+  questionOrder = shuffle([...WORDS]).slice(0, Math.min(TOTAL_QUESTIONS, WORDS.length));
+  TOTAL_QUESTIONS = questionOrder.length;
+
+  document.getElementById('scoreVal').textContent = '0';
+  document.getElementById('streakVal').textContent = '0';
+  document.getElementById('totalQ').textContent = TOTAL_QUESTIONS;
+  document.getElementById('progressFill').style.width = '0%';
+  document.getElementById('endScreen').classList.remove('show');
+  document.getElementById('gameContent').classList.remove('hidden');
+  document.getElementById('feedbackBox').classList.remove('show','correct-fb','wrong-fb');
+  document.getElementById('analysisPanel').classList.remove('show');
+  document.getElementById('btnAnalysis').classList.add('hidden');
+  document.getElementById('btnNext').classList.add('hidden');
+
+  loadQuestion();
+}
+
+function shuffle(arr) {
+  for (let i = arr.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+
+function loadQuestion() {
+  answered = false;
+  document.getElementById('feedbackBox').classList.remove('show','correct-fb','wrong-fb');
+  document.getElementById('analysisPanel').classList.remove('show');
+  document.getElementById('btnAnalysis').classList.add('hidden');
+  document.getElementById('btnNext').classList.add('hidden');
+
+  const w = questionOrder[currentQIndex];
+  const mode = MODES[currentMode];
+
+  document.getElementById('qNum').textContent = currentQIndex + 1;
+  document.getElementById('hebWord').textContent = w.heb;
+  document.getElementById('wordTranslit').textContent = w.translit;
+  document.getElementById('wordHint').textContent = w.hint;
+  document.getElementById('wordTypeBadge').textContent = w.type === 'verbe' ? 'Verbe' : 'Nom';
+  document.getElementById('qCategory').textContent = mode.label;
+  document.getElementById('qText').textContent = mode.question;
+
+  // Generate options
+  const correct = mode.getAnswer(w);
+  const pool = mode.getWrongPool().filter(x => x !== correct);
+  const wrongs = shuffle(pool).slice(0, 3);
+  const options = shuffle([correct, ...wrongs]);
+
+  const grid = document.getElementById('optionsGrid');
+  grid.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = opt;
+    btn.onclick = () => selectAnswer(opt, correct, w);
+    grid.appendChild(btn);
+  });
+}
+
+function selectAnswer(chosen, correct, word) {
+  if (answered) return;
+  answered = true;
+
+  const isCorrect = chosen === correct;
+  const fb = document.getElementById('feedbackBox');
+
+  // Highlight buttons
+  document.querySelectorAll('.option-btn').forEach(btn => {
+    btn.disabled = true;
+    if (btn.innerHTML === correct) btn.classList.add('correct');
+    else if (btn.innerHTML === chosen && !isCorrect) btn.classList.add('wrong');
+  });
+
+  if (isCorrect) {
+    score += streak >= 2 ? 20 : 10;
+    streak++;
+    fb.className = 'feedback-box show correct-fb';
+    document.getElementById('fbTitle').textContent = streak >= 3 ? `✦ Série de ${streak} ! +20 pts` : '✓ Correct !';
+    document.getElementById('fbBody').textContent = `"${word.heb}" (${word.translit}) — ${word.meaning}. ${word.structure}`;
+  } else {
+    streak = 0;
+    fb.className = 'feedback-box show wrong-fb';
+    document.getElementById('fbTitle').textContent = '✗ Incorrect';
+    document.getElementById('fbBody').innerHTML = `La bonne réponse est : <strong>${correct}</strong>. ${word.structure}`;
+  }
+
+  document.getElementById('scoreVal').textContent = score;
+  document.getElementById('streakVal').textContent = streak;
+  document.getElementById('progressFill').style.width = ((currentQIndex+1)/TOTAL_QUESTIONS*100)+'%';
+
+  document.getElementById('btnAnalysis').classList.remove('hidden');
+  document.getElementById('btnNext').classList.remove('hidden');
+
+  if (currentQIndex >= TOTAL_QUESTIONS - 1) {
+    document.getElementById('btnNext').textContent = 'Voir les résultats →';
+  }
+}
+
+function showAnalysis() {
+  const w = questionOrder[currentQIndex];
+  const panel = document.getElementById('analysisPanel');
+  panel.classList.add('show');
+
+  document.getElementById('analysisContent').innerHTML = `
+    <div class="analysis-row"><span class="a-key">I — Mot</span><span class="a-heb">${w.heb}</span><span class="a-val">(${w.translit}) · ${w.meaning}</span></div>
+    <div class="analysis-row"><span class="a-key">S — Structure</span><span class="a-val">${w.structure}</span></div>
+    <div class="analysis-row"><span class="a-key">R — Racine</span><span class="a-heb">${w.root}</span></div>
+    <div class="analysis-row"><span class="a-key">I — Indices</span><span class="a-val">${w.hint}</span></div>
+    <div class="analysis-row"><span class="a-key">M — Morpho</span><span class="a-val">Binyan : <strong>${w.binyan}</strong> · Temps : <strong>${w.temps}</strong> · Personne : <strong>${w.personne}</strong></span></div>
+  `;
+  document.getElementById('btnAnalysis').classList.add('hidden');
+}
+
+function nextQuestion() {
+  currentQIndex++;
+  if (currentQIndex >= TOTAL_QUESTIONS) {
+    showEndScreen();
+  } else {
+    document.getElementById('btnNext').textContent = 'Question suivante →';
+    loadQuestion();
+  }
+}
+
+function showEndScreen() {
+  document.getElementById('gameContent').classList.add('hidden');
+  const end = document.getElementById('endScreen');
+  end.classList.add('show');
+
+  const max = TOTAL_QUESTIONS * 20;
+  const pct = score / max;
+
+  document.getElementById('finalScore').textContent = score;
+  document.getElementById('maxScore').textContent = max;
+
+  let msg, heb;
+  if (pct >= 0.85) { msg = "Excellence absolue !"; heb = "מְצֻיָּן מְאֹד !"; }
+  else if (pct >= 0.65) { msg = "Très bonne maîtrise !"; heb = "טוֹב מְאֹד !"; }
+  else if (pct >= 0.45) { msg = "Bonne progression."; heb = "טוֹב !"; }
+  else { msg = "Continuez vos études…"; heb = "עוֹד תִּלְמַד !"; }
+
+  document.getElementById('endMsg').textContent = msg;
+  document.getElementById('endHeb').textContent = heb;
+}
+
+// Init
+window.onload = () => restartGame();
+</script>
+</body>
+</html>
